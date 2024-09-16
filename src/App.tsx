@@ -1,6 +1,6 @@
 import { Container, Typography } from "@mui/material";
 import "./App.css";
-import { UserTable } from "./components/UserTable";
+import UserTable from "./components/UserTable";
 
 function App() {
   return (

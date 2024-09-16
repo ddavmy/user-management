@@ -9,12 +9,14 @@ export interface User {
 
 interface UsersState {
   users: User[];
+  filteredUsers: User[];
   loading: "pending" | "fulfilled" | "rejected";
   error: string | null;
 }
 
 const initialState: UsersState = {
   users: [],
+  filteredUsers: [],
   loading: "pending",
   error: null,
 };
@@ -28,25 +30,35 @@ export const fetchUsers = createAsyncThunk("user/fetchUsers", async () => {
 const usersSlice = createSlice({
   name: "user",
   initialState,
-  reducers: {},
+  reducers: {
+    filterUsers: (state, action: PayloadAction<Partial<User>>) => {
+      const { name, username, email, phone } = action.payload;
+      state.filteredUsers = state.users.filter((user) => {
+        return (
+          (!name || user.name.toLowerCase().includes(name.toLowerCase())) &&
+          (!username ||
+            user.username.toLowerCase().includes(username.toLowerCase())) &&
+          (!email || user.email.toLowerCase().includes(email.toLowerCase())) &&
+          (!phone || user.phone.includes(phone))
+        );
+      });
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchUsers.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      fetchUsers.fulfilled,
-      (state, action: PayloadAction<User[]>) => {
-        state.loading = "fulfilled";
-        state.users = action.payload;
-        state.error = null;
-      }
-    );
+    builder.addCase(fetchUsers.fulfilled, (state, action) => {
+      state.loading = "fulfilled";
+      state.users = action.payload;
+      state.filteredUsers = action.payload;
+    });
     builder.addCase(fetchUsers.rejected, (state, action) => {
-      state.users = [];
       state.loading = "rejected";
       state.error = action.error.message || "Error, rejected";
     });
   },
 });
 
+export const { filterUsers } = usersSlice.actions;
 export default usersSlice.reducer;
