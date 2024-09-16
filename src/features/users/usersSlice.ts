@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface User {
   name: string;
@@ -9,26 +9,44 @@ export interface User {
 
 interface UsersState {
   users: User[];
+  loading: "pending" | "fulfilled" | "rejected";
+  error: string | null;
 }
 
 const initialState: UsersState = {
   users: [],
+  loading: "pending",
+  error: null,
 };
 
-export const usersSlice = createSlice({
-  name: "users",
-  initialState,
-  reducers: {
-    display: (state, action: PayloadAction<Partial<User>>) => {
-      // Redux Toolkit allows us to write "mutating" logic in reducers. It
-      // doesn't actually mutate the state because it uses the Immer library,
-      // which detects changes to a "draft state" and produces a brand new
-      // immutabl1e state based off those changes
-    },
-  },
+export const fetchUsers = createAsyncThunk("user/fetchUsers", async () => {
+  const response = await fetch("https://jsonplaceholder.typicode.com/users/");
+  const data = await response.json();
+  return data;
 });
 
-// Action creators are generated for each case reducer function
-export const { display } = usersSlice.actions;
+const usersSlice = createSlice({
+  name: "user",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder.addCase(fetchUsers.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      fetchUsers.fulfilled,
+      (state, action: PayloadAction<User[]>) => {
+        state.loading = "fulfilled";
+        state.users = action.payload;
+        state.error = null;
+      }
+    );
+    builder.addCase(fetchUsers.rejected, (state, action) => {
+      state.users = [];
+      state.loading = "rejected";
+      state.error = action.error.message || "Error, rejected";
+    });
+  },
+});
 
 export default usersSlice.reducer;
